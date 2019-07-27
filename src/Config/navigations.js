@@ -11,6 +11,16 @@ const AuthNavigator = createStackNavigator({
     },
 });
 
+
+const HomeNavigator = createStackNavigator({
+    Home: {
+        screen: Routes.All
+    },
+    Messages: {
+        screen: Routes.Messages
+    },
+});
+
 // const TabNavigator = createMaterialTopTabNavigator({
 //     Users: {
 //         screen: Routes.All
@@ -31,7 +41,7 @@ const AuthNavigator = createStackNavigator({
 
 const MainNavigator = createSwitchNavigator({
     App: {
-        screen: Routes.All
+        screen: HomeNavigator
     },
     Auth: {
         screen: AuthNavigator
