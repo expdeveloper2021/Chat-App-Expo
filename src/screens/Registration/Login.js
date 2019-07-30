@@ -7,6 +7,7 @@ export default class Login extends Component {
         title: 'Log In',
         headerStyle: {
             backgroundColor: '#42f5e6',
+            height: 60
         },
         headerTintColor: 'black',
         headerTitleStyle: {
@@ -28,7 +29,7 @@ export default class Login extends Component {
             <View style={styles.container}>
                 <StatusBar barStyle="light-content" />
                 <Image
-                    style={{ width: 100, height: 100, alignSelf: "center" }}
+                    style={{ width: 100, height: 100, alignSelf: "center", marginBottom: 20 }}
                     source={{ uri: 'https://cdn0.iconfinder.com/data/icons/kameleon-free-pack-rounded/110/Chat-2-512.png' }}
                 />
                 <TextInput
@@ -59,11 +60,15 @@ export default class Login extends Component {
                     blurOnSubmit={true}
                     secureTextEntry={true}
                 />
-                <TouchableOpacity style={{ width: "30%", alignSelf: "center", marginTop: 10, height: "auto", padding: 10, borderWidth: 1 }} onPress={this._submit.bind(this)}>
+                <TouchableOpacity style={{ width: "30%", alignSelf: "center", marginTop: 15, height: "auto", padding: 10, borderWidth: 2, borderColor: 'blue', borderRadius: 10, backgroundColor: 'white' }} onPress={this._submit.bind(this)}>
                     <Text style={{ textAlign: "center" }}>Sign In</Text>
                 </TouchableOpacity>
+                <Text style={{alignSelf: 'center' , marginTop: 15}}>OR</Text>
+                <TouchableOpacity style={{ width: "50%", alignSelf: "center", marginTop: 15, height: "auto", padding: 10, borderWidth: 2, borderColor: 'blue', borderRadius: 10, backgroundColor: 'white' }} onPress={this._submit.bind(this)}>
+                    <Text style={{ textAlign: "center" }}>Login with Facebook</Text>
+                </TouchableOpacity>
                 <Text style={{ marginLeft: 20, marginTop: 10 }}>Want an Account? &nbsp;
-                    <Text style={{ textDecorationLine: "underline", fontWeight: "bold" }} onPress={this.change.bind(this)}>Go to SignUp</Text>
+                    <Text style={{ textDecorationLine: "underline", fontWeight: "bold" }} onPress={this.change.bind(this)}>Go to Sign Up</Text>
                 </Text>
             </View>
         );

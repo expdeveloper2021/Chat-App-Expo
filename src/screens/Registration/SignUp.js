@@ -6,11 +6,11 @@ export default class App extends Component {
         title: 'Sign Up',
         headerStyle: {
             backgroundColor: '#42f5e6',
+            height: 60
         },
-        headerTintColor: 'black',
+        headerTintColor: 'black', 
         headerTitleStyle: {
             fontWeight: 'bold',
-            marginLeft: 20
         },
     };
 

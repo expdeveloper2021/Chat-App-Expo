@@ -3,11 +3,11 @@ import { createDrawerNavigator, createMaterialTopTabNavigator, createSwitchNavig
 import * as Routes from '../index';
 
 const AuthNavigator = createStackNavigator({
-    SignUp: {
-        screen: Routes.SignUp,
-    },
     Login: {
         screen: Routes.Login
+    },
+    SignUp: {
+        screen: Routes.SignUp,
     },
 });
 
@@ -40,11 +40,11 @@ const HomeNavigator = createStackNavigator({
 // }, {});
 
 const MainNavigator = createSwitchNavigator({
-    App: {
-        screen: HomeNavigator
-    },
     Auth: {
         screen: AuthNavigator
+    },
+    App: {
+        screen: HomeNavigator
     },
 });
 
