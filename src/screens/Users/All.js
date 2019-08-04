@@ -1,13 +1,44 @@
 import React, { Component } from 'react'
-import { Text, View, StyleSheet, Image } from 'react-native'
+import { Text, View, StyleSheet, Image, TextInput, ActivityIndicator } from 'react-native'
 import { Appbar, List } from 'react-native-paper';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import { TouchableOpacity, ScrollView } from 'react-native-gesture-handler';
 import folder from '../../Images/user.png'
+import firebase from '../../Config/Fire'
 
 export default class All extends Component {
+
+    constructor() {
+        super()
+        this.state = {
+            arr: [],
+            come: false,
+        }
+    }
+
+
+    componentDidMount() {
+        let uid = firebase.auth().currentUser.uid
+        firebase.database().ref("users").on("child_added", (data) => {
+            setTimeout(() => {
+                let arr = this.state.arr
+                if (data.val().info.uid !== uid) {
+                    arr.push(data.val().info)
+                }
+                this.setState({ arr, uid, come: true })
+            }, 2000);
+        })
+    }
+
     static navigationOptions = {
         header: null,
     };
+
+    clicked(userID) {
+        firebase.database().ref("users/" + this.state.uid + "/current").set(userID).then(() => {
+            this.props.navigation.navigate("Messages")
+        })
+    }
+
     render() {
         return (
             <View style={styles.container}>
@@ -19,53 +50,23 @@ export default class All extends Component {
                     <Appbar.Content style={{ marginLeft: -3 }}
                         title="Messenger"
                     />
-                    {/* <Appbar.Action icon="search" onPress={this._onSearch} />
-                    <Appbar.Action icon="more-vert" onPress={this._onMore} /> */}
                 </Appbar.Header>
-                <Text style={{ fontSize: 30, alignSelf: "center", fontWeight: "bold", marginTop: 10, textDecorationLine: "underline" }}>All Users</Text>
-                <List.Item
-                    title="Fahim Memon"
-                    description="Last Message"
-                    style={{ borderWidth: 1, marginTop: 30 }}
-                    left={props => <Image {...props} source={folder} style={{ width: 50, height: 50, alignSelf: "center" }} />}
-                    right={props => <TouchableOpacity {...props} style={{ marginTop: 10 }}
-                        onPress={() => this.props.navigation.navigate("Messages")}
-                    >
-                        <Image
-                            style={{ width: 30, height: 30, }}
-                            source={{ uri: 'https://cdn.iconscout.com/icon/premium/png-256-thumb/group-chat-5-751639.png' }}
-                        />
-                    </TouchableOpacity>}
-                />
-                <List.Item
-                    title="Faizan Memon"
-                    description="Last Message"
-                    style={{ borderWidth: 1, marginTop: 3 }}
-                    left={props => <Image {...props} source={folder} style={{ width: 50, height: 50, alignSelf: "center" }} />}
-                    right={props => <TouchableOpacity {...props} style={{ marginTop: 10 }}
-                        onPress={() => this.props.navigation.navigate("Messages")}
-                    >
-                        <Image
-                            style={{ width: 30, height: 30, alignSelf: "center" }}
-                            source={{ uri: 'https://cdn.iconscout.com/icon/premium/png-256-thumb/group-chat-5-751639.png' }}
-                        />
-                    </TouchableOpacity>
+
+                <ScrollView>
+                    <TextInput style={{ borderWidth: 1, marginTop: 20, padding: 10, width: "90%", alignSelf: "center", borderRadius: 20, paddingLeft: 20 }} placeholder="Search for Users" placeholderTextColor="blue" />
+                    {!this.state.come ? <ActivityIndicator size="large" color="#0000ff" style={{ marginTop: 30 }} /> :
+                        this.state.arr.map((e) => {
+                            return <TouchableOpacity onPress={this.clicked.bind(this, e.uid)} key={e.uid} >
+                                <List.Item
+                                    title={e.name}
+                                    description= "Last Message"
+                                    style={{ marginTop: 30 }}
+                                    left={props => <Image {...props} source={folder} style={{ width: 50, height: 50, alignSelf: "center" }} />}
+                                />
+                            </TouchableOpacity>
+                        })
                     }
-                />
-                <List.Item
-                    title="Tahir Memon"
-                    description="Last Message"
-                    style={{ borderWidth: 1, marginTop: 3 }}
-                    left={props => <Image {...props} source={folder} style={{ width: 50, height: 50, alignSelf: "center" }} />}
-                    right={props => <TouchableOpacity {...props} style={{ marginTop: 10 }}
-                        onPress={() => this.props.navigation.navigate("Messages")}
-                    >
-                        <Image
-                            style={{ width: 30, height: 30, alignSelf: "center" }}
-                            source={{ uri: 'https://cdn.iconscout.com/icon/premium/png-256-thumb/group-chat-5-751639.png' }}
-                        />
-                    </TouchableOpacity>}
-                />
+                </ScrollView>
             </View>
         )
     }

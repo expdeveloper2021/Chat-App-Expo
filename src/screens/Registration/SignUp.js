@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { Image, StatusBar, TextInput, View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { Image, StatusBar, TextInput, View, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
+import firebase from '../../Config/Fire'
 
 export default class App extends Component {
     static navigationOptions = {
@@ -8,7 +9,7 @@ export default class App extends Component {
             backgroundColor: '#42f5e6',
             height: 60
         },
-        headerTintColor: 'black', 
+        headerTintColor: 'black',
         headerTitleStyle: {
             fontWeight: 'bold',
         },
@@ -72,7 +73,7 @@ export default class App extends Component {
                     blurOnSubmit={true}
                     secureTextEntry={true}
                 />
-                <TouchableOpacity style={{ width: "30%", alignSelf: "center", marginTop: 10, height: "auto", padding: 10, borderWidth: 1 }} onPress={this._submit.bind(this)}>
+                <TouchableOpacity style={{  width: "30%", alignSelf: 'center', marginTop: 15, height: "auto", padding: 10, borderWidth: 2, borderColor: 'blue', borderRadius: 10, backgroundColor: 'white' }} onPress={this._submit.bind(this)}>
                     <Text style={{ textAlign: "center" }}>Sign Up</Text>
                 </TouchableOpacity>
                 <Text style={{ marginLeft: 20, marginTop: 10 }}>Have an Account? &nbsp;
@@ -91,9 +92,46 @@ export default class App extends Component {
     };
 
     _submit = () => {
-        alert(`Welcome, ${this.state.name}! Confirmation email has been sent to ${this.state.email}`);
-        this.setState({ name: '', email: '', password: '' })
-        this._nameInput.focus()
+        const { name, email, password } = this.state
+        firebase.auth().createUserWithEmailAndPassword(email, password)
+            .then((success) => {
+                let uid = success.user.uid
+                let userObj = {
+                    name,
+                    email,
+                    password,
+                    uid,
+                }
+                this.setState({ name: '', email: '', password: '' })
+                firebase.database().ref("users/" + success.user.uid + "/info").set(userObj).then(() => {
+                    Alert.alert(
+                        'Nice Job',
+                        'Please login to continue',
+                        [
+                            {
+                                text: 'Cancel',
+                                onPress: () => console.log("Cancel Pressed"),
+                                style: 'cancel',
+                            },
+                            { text: 'OK', onPress: () => this.props.navigation.navigate("Login") },
+                        ],
+                        { cancelable: true }
+                    );
+                }).catch(() => {
+                    console.log("Database undefined")
+                })
+            })
+            .catch((error) => {
+                var errorMessage = error.message;
+                Alert.alert(
+                    'Sorry',
+                    errorMessage,
+                    [
+                        { text: 'OK', onPress: () => console.log('OK Pressed') },
+                    ],
+                    { cancelable: true }
+                );
+            });
     };
 }
 

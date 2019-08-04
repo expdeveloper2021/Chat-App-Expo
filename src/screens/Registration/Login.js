@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { Image, StatusBar, TextInput, View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { Image, StatusBar, TextInput, View, StyleSheet, TouchableOpacity, Text , Alert } from 'react-native';
+import firebase from '../../Config/Fire'
 
 export default class Login extends Component {
 
@@ -60,16 +61,15 @@ export default class Login extends Component {
                     blurOnSubmit={true}
                     secureTextEntry={true}
                 />
-                <TouchableOpacity style={{ width: "30%", alignSelf: "center", marginTop: 15, height: "auto", padding: 10, borderWidth: 2, borderColor: 'blue', borderRadius: 10, backgroundColor: 'white' }} onPress={this._submit.bind(this)}>
+                <TouchableOpacity style={{ width: "30%", alignSelf: 'center', marginTop: 15, height: "auto", padding: 10, borderWidth: 2, borderColor: 'blue', borderRadius: 10, backgroundColor: 'white' }} onPress={this._submit.bind(this)}>
                     <Text style={{ textAlign: "center" }}>Sign In</Text>
-                </TouchableOpacity>
-                <Text style={{alignSelf: 'center' , marginTop: 15}}>OR</Text>
-                <TouchableOpacity style={{ width: "50%", alignSelf: "center", marginTop: 15, height: "auto", padding: 10, borderWidth: 2, borderColor: 'blue', borderRadius: 10, backgroundColor: 'white' }} onPress={this._submit.bind(this)}>
-                    <Text style={{ textAlign: "center" }}>Login with Facebook</Text>
                 </TouchableOpacity>
                 <Text style={{ marginLeft: 20, marginTop: 10 }}>Want an Account? &nbsp;
                     <Text style={{ textDecorationLine: "underline", fontWeight: "bold" }} onPress={this.change.bind(this)}>Go to Sign Up</Text>
                 </Text>
+                <TouchableOpacity style={{ width: "50%", alignSelf: 'center', marginTop: 15, height: "auto", padding: 10, borderWidth: 2, borderColor: 'blue', borderRadius: 10, backgroundColor: 'white' }}>
+                    <Text style={{ textAlign: "center" }}>Login with Facebook</Text>
+                </TouchableOpacity>
             </View>
         );
     }
@@ -79,9 +79,34 @@ export default class Login extends Component {
     };
 
     _submit = () => {
-        alert(`Welcome! Confirmation email has been sent to ${this.state.email}`);
-        this.setState({ email: '', password: '' })
-        this.props.navigation.navigate("App")
+        const { email, password } = this.state
+        firebase.auth().signInWithEmailAndPassword(email, password)
+            .then((success) => {
+                Alert.alert(
+                    'Nice Job',
+                    'Login Successfully',
+                    [
+                        {
+                            text: 'Cancel',
+                            onPress: () => console.log("Cancel Pressed"),
+                            style: 'cancel',
+                        },
+                        { text: 'OK', onPress: () => this.props.navigation.navigate("Home") },
+                    ],
+                    { cancelable: true }
+                );
+            })
+            .catch((error) => {
+                var errorMessage = error.message;
+                Alert.alert(
+                    'Sorry',
+                    errorMessage,
+                    [
+                        { text: 'OK', onPress: () => console.log('OK Pressed') },
+                    ],
+                    { cancelable: true }
+                );
+            });
     };
 }
 
