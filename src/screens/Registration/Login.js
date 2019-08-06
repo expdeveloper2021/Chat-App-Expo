@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
-import { Image, StatusBar, TextInput, View, StyleSheet, TouchableOpacity, Text , Alert } from 'react-native';
-import firebase from '../../Config/Fire'
+import { Image, StatusBar, TextInput, View, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
+import firebase, { login } from '../../Config/Fire'
+import * as Facebook from 'expo-facebook';
 
 export default class Login extends Component {
 
@@ -67,7 +68,7 @@ export default class Login extends Component {
                 <Text style={{ marginLeft: 20, marginTop: 10 }}>Want an Account? &nbsp;
                     <Text style={{ textDecorationLine: "underline", fontWeight: "bold" }} onPress={this.change.bind(this)}>Go to Sign Up</Text>
                 </Text>
-                <TouchableOpacity style={{ width: "50%", alignSelf: 'center', marginTop: 15, height: "auto", padding: 10, borderWidth: 2, borderColor: 'blue', borderRadius: 10, backgroundColor: 'white' }}>
+                <TouchableOpacity style={{ width: "50%", alignSelf: 'center', marginTop: 15, height: "auto", padding: 10, borderWidth: 2, borderColor: 'blue', borderRadius: 10, backgroundColor: 'white' }} onPress={this.loginWithFacebook.bind(this)}>
                     <Text style={{ textAlign: "center" }}>Login with Facebook</Text>
                 </TouchableOpacity>
             </View>
@@ -108,6 +109,50 @@ export default class Login extends Component {
                 );
             });
     };
+
+    loginWithFacebook = async () => {
+        const {
+            type,
+            token,
+        } = await Facebook.logInWithReadPermissionsAsync('475325173025054', {
+            permissions: ['public_profile'],
+        })
+
+        if (type === 'success') {
+            const response = await fetch(`https://graph.facebook.com/me?access_token=${token}`);
+            const res = await response.json();
+            try {
+                const user = await login(token);
+                let uid = user.user.uid
+                let name = res.name
+                let userObj = {
+                    uid,
+                    name
+                }
+                firebase.database().ref("users/" + uid + "/info").set(userObj).then(() => {
+                    Alert.alert(
+                        'Nice Job',
+                        'Login Successfully',
+                        [
+                            {
+                                text: 'Cancel',
+                                onPress: () => console.log("Cancel Pressed"),
+                                style: 'cancel',
+                            },
+                            { text: 'OK', onPress: () => this.props.navigation.navigate("Home") },
+                        ],
+                        { cancelable: true }
+                    );
+                }).catch(() => {
+                    console.log("Database undefined")
+                })
+            } catch (e) {
+                console.log('e ===>', e)
+            }
+        } else {
+            // type === 'cancel'
+        }
+    }
 }
 
 const styles = StyleSheet.create({

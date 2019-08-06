@@ -9,7 +9,7 @@ import { TextInput } from 'react-native-paper';
 import { Camera } from 'expo-camera';
 import { Video } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
-// import * as FileSystem from 'expo-file-system';
+import { Audio } from 'expo-av';
 import firebase from '../../Config/Fire'
 
 export default class Messages extends Component {
@@ -21,6 +21,7 @@ export default class Messages extends Component {
             msgArr: [],
             shouldPlay: false,
             recording: false,
+            loadEmoji: false,
         }
     }
 
@@ -34,7 +35,7 @@ export default class Messages extends Component {
                 this.setState({ uid, opponentID: data.val() })
             })
         })
-        firebase.database().ref(`chatRoom/${this.state.uid}/${this.state.opponentID}`).on("child_added", (data) => {
+        await firebase.database().ref(`chatRoom/${this.state.uid}/${this.state.opponentID}`).on("child_added", (data) => {
             let msgArr = this.state.msgArr
             msgArr.push(data.val())
             this.setState({ msgArr })
@@ -68,21 +69,61 @@ export default class Messages extends Component {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
             allowsEditing: true,
-            aspect: [4, 4],
         })
+        const response = await fetch(result.uri);
+        const blob = await response.blob();
+        let storageRef = firebase.storage().ref().child(`userimages/${blob.name}`)
+        storageRef.put(blob)
+            .then((snapshot) => {
+                snapshot.ref.getDownloadURL().then((snapUrl) => {
+                    let today = new Date()
+                    let created = today.getHours() + ":" + today.getMinutes() + ',' + today.getDate() + '-' + (today.getMonth() + 1) + '-' + today.getFullYear();
+                    if (result.type === 'image') {
+                        let msgObj = {
+                            snapUrl,
+                            created,
+                            sender: "me",
+                            type: 'image',
+                        }
+                        firebase.database().ref(`chatRoom/${this.state.uid}/${this.state.opponentID}`).push(msgObj).then(() => {
+                            msgObj.sender = "opponent"
+                            firebase.database().ref(`chatRoom/${this.state.opponentID}/${this.state.uid}`).push(msgObj).then(() => {
+                                this.props.navigation.navigate("Messages")
+                            })
+                        })
+                    }
+                    if (result.type === 'video') {
+                        let msgObj = {
+                            snapUrl,
+                            created,
+                            sender: "me",
+                            type: 'video',
+                        }
+                        firebase.database().ref(`chatRoom/${this.state.uid}/${this.state.opponentID}`).push(msgObj).then(() => {
+                            msgObj.sender = "opponent"
+                            firebase.database().ref(`chatRoom/${this.state.opponentID}/${this.state.uid}`).push(msgObj).then(() => {
+                                this.props.navigation.navigate("Messages")
+                            })
+                        })
+                    }
+                })
+            })
     }
 
-    audio() {
+    async audio() {
         Permissions.askAsync(Permissions.AUDIO_RECORDING);
-        this.props.navigation.navigate("Audios")
+        const recording = new Audio.Recording();
+        try {
+            await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
+            await recording.startAsync();
+            console.log(recording)
+        } catch (error) {
+            // An error occurred!
+        }
     }
 
-    capture() {
-        console.log("Picture Shooted")
-    }
-
-    record() {
-        console.log("Video Shooted")
+    location() {
+        this.props.navigation.navigate("Map")
     }
 
     send() {
@@ -112,24 +153,27 @@ export default class Messages extends Component {
                             {!!this.state.msgArr && this.state.msgArr.map((e) => {
                                 if (e.sender === 'me') {
                                     if (e.type === 'message') {
-                                        return <View style={styles.mine}><Text>{e.msg}</Text></View>
-                                    } else if (e.type === 'image') {
-                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 10 }} />
-                                    } else if (e.type === 'video') {
+                                        return <View style={styles.mine} key={Math.random()}><Text>{e.msg}</Text></View>
+                                    }
+                                    if (e.type === 'image') {
+                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} key={e.snapUrl} />
+                                    }
+                                    if (e.type === 'video') {
                                         return <Video source={{ uri: e.snapUrl }}
+                                            key={e.snapUrl}
                                             rate={1.0}
                                             volume={1.0}
                                             isMuted={false}
                                             resizeMode="cover"
                                             shouldPlay
                                             isLooping
-                                            style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 10 }} />
+                                            style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} />
                                     }
                                 } else {
                                     if (e.type === 'message') {
                                         return <View style={styles.your}><Text>{e.msg}</Text></View>
                                     } else if (e.type === 'image') {
-                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 10 }} />
+                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} />
                                     } else if (e.type === 'video') {
                                         return <Video source={{ uri: e.snapUrl }}
                                             rate={1.0}
@@ -138,7 +182,7 @@ export default class Messages extends Component {
                                             resizeMode="cover"
                                             shouldPlay
                                             isLooping
-                                            style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 10 }} />
+                                            style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} />
                                     }
                                 }
                             })}
@@ -147,10 +191,8 @@ export default class Messages extends Component {
                             <TouchableOpacity onPress={() => this.video()}><Text><FontAwesome name="video-camera" size={26} /></Text></TouchableOpacity>
                             <TouchableOpacity onPress={() => this.camera()}><Text><AntDesign name="camera" size={26} /></Text></TouchableOpacity>
                             <TouchableOpacity onPress={() => this.audio()}><Text><FontAwesome name="microphone" size={26} /></Text></TouchableOpacity>
-                            <TouchableOpacity><Text><Entypo name="emoji-happy" size={26} /></Text></TouchableOpacity>
-                            <TouchableOpacity><Text> <Entypo name="location-pin" size={26} /></Text></TouchableOpacity>
+                            <TouchableOpacity onPress={() => this.location()}><Text> <Entypo name="location-pin" size={26} /></Text></TouchableOpacity>
                             <TouchableOpacity onPress={() => this.photo()}><Text><AntDesign name="picture" size={26} /></Text></TouchableOpacity>
-                            <TouchableOpacity><Text><AntDesign name="addfile" size={26} /></Text></TouchableOpacity>
                         </View>
                         <View style={{ display: 'flex', flexDirection: 'row' }}>
                             <View style={{ width: "80%" }}>
@@ -193,7 +235,7 @@ const styles = StyleSheet.create({
         maxWidth: '80%',
         height: "auto",
         padding: 10,
-        backgroundColor: "#058bf2",
+        backgroundColor: "#91c3ff",
         color: "black",
         marginTop: 10,
         alignSelf: "flex-end",

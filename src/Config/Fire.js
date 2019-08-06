@@ -11,4 +11,13 @@ const config = {
 };
 firebase.initializeApp(config);
 
+function login(token) {
+    const credential = firebase.auth.FacebookAuthProvider.credential(token);
+    return firebase.auth().signInWithCredential(credential);
+}
+
+export {
+    login
+}
+
 export default firebase;
