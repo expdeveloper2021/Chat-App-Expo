@@ -12,23 +12,51 @@ const AuthNavigator = createStackNavigator({
 });
 
 
+const TabNavigator = createMaterialTopTabNavigator(
+    {
+        Users: { screen: Routes.All },
+        Status: { screen: Routes.Status },
+    },
+    {
+        tabBarOptions: {
+            activeTintColor: 'red',
+            inactiveTintColor: 'black',
+            style: {
+                backgroundColor: '#42f5e6',
+
+            },
+        },
+    },
+)
+
 const HomeNavigator = createStackNavigator({
     Home: {
-        screen: Routes.All
+        screen: TabNavigator,
+        navigationOptions: {
+            title: 'Messenger',
+            headerStyle: {
+                backgroundColor: '#42f5e6',
+                height: 60
+            },
+            headerTintColor: 'black',
+        },
     },
     Messages: {
         screen: Routes.Messages
     },
+    Camera: {
+        screen: Routes.Camera
+    },
+    Video: {
+        screen: Routes.Video
+    },
+    Audios: {
+        screen: Routes.Audios
+    },
+    StatusCamera: {
+        screen: Routes.StatusCamera
+    }
 });
-
-// const TabNavigator = createMaterialTopTabNavigator({
-//     Users: {
-//         screen: Routes.All
-//     },
-//     Messages: {
-//         screen: Routes.Messages
-//     }
-// })
 
 // const AppNavigator = createDrawerNavigator({
 //     'All Users': {

@@ -7,8 +7,8 @@ import {
 import * as Permissions from 'expo-permissions';
 import { TextInput } from 'react-native-paper';
 import { Camera } from 'expo-camera';
+import { Video } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
-// import { Audio } from "expo-av";
 // import * as FileSystem from 'expo-file-system';
 import firebase from '../../Config/Fire'
 
@@ -16,18 +16,23 @@ export default class Messages extends Component {
     constructor() {
         super()
         this.state = {
-            hasCameraPermission: null,
             type: Camera.Constants.Type.back,
-            clicked: '',
             msg: '',
             msgArr: [],
+            shouldPlay: false,
+            recording: false,
         }
     }
 
     async componentDidMount() {
         let uid = await firebase.auth().currentUser.uid
         firebase.database().ref("users/" + uid + "/current").on("value", (data) => {
-            this.setState({ uid, opponentID: data.val() })
+            firebase.database().ref("users/" + data.val()).on("value", (dat) => {
+                this.props.navigation.setParams({
+                    name: dat.val().info.name
+                });
+                this.setState({ uid, opponentID: data.val() })
+            })
         })
         firebase.database().ref(`chatRoom/${this.state.uid}/${this.state.opponentID}`).on("child_added", (data) => {
             let msgArr = this.state.msgArr
@@ -36,27 +41,27 @@ export default class Messages extends Component {
         })
     }
 
-    static navigationOptions = {
-        headerTitleStyle: { alignSelf: 'center' },
-        title: 'User Name',
-        headerStyle: {
-            backgroundColor: 'red',
-            textAlign: "center"
-        },
-        headerTintColor: 'white',
-        headerTitleStyle: {
-            fontWeight: 'bold',
-        },
+    static navigationOptions = ({ navigation }) => {
+        const { params = {} } = navigation.state;
+        return {
+            title: params.name,
+            headerStyle: {
+                backgroundColor: 'blue',
+                textAlign: "center"
+            },
+            headerTintColor: 'white',
+            headerTitleStyle: {
+                fontWeight: 'bold',
+            },
+        }
     };
 
     camera() {
-        Permissions.askAsync(Permissions.CAMERA);
-        this.setState({ clicked: 'Camera' })
+        this.props.navigation.navigate("Camera")
     }
 
     video() {
-        Permissions.askAsync(Permissions.CAMERA);
-        this.setState({ clicked: 'Video' })
+        this.props.navigation.navigate("Video")
     }
 
     async photo() {
@@ -69,26 +74,15 @@ export default class Messages extends Component {
 
     audio() {
         Permissions.askAsync(Permissions.AUDIO_RECORDING);
-        console.log("Audio Recording nahi horahi bhau")
-        // const recording = new Audio.Recording();
-        // try {
-        //     await recording.prepareToRecordAsync(this.recordingSettings);
-        //     recording.setOnRecordingStatusUpdate(this._updateScreenForRecordingStatus);
-        //     await recording.startAsync()
-        // } catch (error) {
-        //     console.log(error)
-        // }
+        this.props.navigation.navigate("Audios")
     }
 
-
     capture() {
-        this.setState({ clicked: '' })
         console.log("Picture Shooted")
     }
 
     record() {
         console.log("Video Shooted")
-        this.setState({ clicked: '' })
     }
 
     send() {
@@ -98,27 +92,54 @@ export default class Messages extends Component {
         let msgObj = {
             msg,
             created,
-            sender: "me"
+            sender: "me",
+            type: 'message',
         }
         firebase.database().ref(`chatRoom/${this.state.uid}/${this.state.opponentID}`).push(msgObj).then(() => {
             msgObj.sender = "opponent"
-            firebase.database().ref(`chatRoom/${this.state.opponentID}/${this.state.uid}`).push(msgObj).then(()=>{
-                this.setState({msg: ''})
+            firebase.database().ref(`chatRoom/${this.state.opponentID}/${this.state.uid}`).push(msgObj).then(() => {
+                this.setState({ msg: '' })
             })
         })
     }
 
     render() {
         return (
-            this.state.clicked === '' ? <View style={styles.container}>
+            <View style={styles.container}>
                 <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} enabled>
                     <View style={styles.messages}>
                         <ScrollView>
                             {!!this.state.msgArr && this.state.msgArr.map((e) => {
                                 if (e.sender === 'me') {
-                                    return <View style={styles.mine}><Text>{e.msg}</Text></View>
+                                    if (e.type === 'message') {
+                                        return <View style={styles.mine}><Text>{e.msg}</Text></View>
+                                    } else if (e.type === 'image') {
+                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 10 }} />
+                                    } else if (e.type === 'video') {
+                                        return <Video source={{ uri: e.snapUrl }}
+                                            rate={1.0}
+                                            volume={1.0}
+                                            isMuted={false}
+                                            resizeMode="cover"
+                                            shouldPlay
+                                            isLooping
+                                            style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 10 }} />
+                                    }
                                 } else {
-                                    return <View style={styles.your}><Text>{e.msg}</Text></View>
+                                    if (e.type === 'message') {
+                                        return <View style={styles.your}><Text>{e.msg}</Text></View>
+                                    } else if (e.type === 'image') {
+                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 10 }} />
+                                    } else if (e.type === 'video') {
+                                        return <Video source={{ uri: e.snapUrl }}
+                                            rate={1.0}
+                                            volume={1.0}
+                                            isMuted={false}
+                                            resizeMode="cover"
+                                            shouldPlay
+                                            isLooping
+                                            style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 10 }} />
+                                    }
                                 }
                             })}
                         </ScrollView>
@@ -136,7 +157,6 @@ export default class Messages extends Component {
                                 <TextInput
                                     placeholder='Type message here.. '
                                     value={this.state.msg}
-                                    autoCapitalize="words"
                                     returnKeyType="send"
                                     onChangeText={msg => this.setState({ msg })}
                                     onSubmitEditing={this.send.bind(this)}
@@ -152,80 +172,6 @@ export default class Messages extends Component {
                         </View>
                     </View>
                 </KeyboardAvoidingView>
-            </View> : this.state.clicked === 'Camera' ? <View style={{ flex: 1 }}>
-                <Camera
-                    style={{ flex: 0.9 }}
-                    type={this.state.type}>
-                </Camera>
-                <View
-                    style={{
-                        flex: 0.1,
-                        backgroundColor: 'transparent',
-                        flexDirection: 'row',
-                    }}>
-                    <TouchableOpacity
-                        style={{
-                            flex: 0.1,
-                            alignSelf: 'center',
-                            marginLeft: 10,
-                        }}
-                        onPress={() => {
-                            this.setState({
-                                type:
-                                    this.state.type === Camera.Constants.Type.back
-                                        ? Camera.Constants.Type.front
-                                        : Camera.Constants.Type.back,
-                            });
-                        }}>
-                        <FontAwesome name="rotate-right" size={40} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={{
-                            flex: 1,
-                            alignSelf: 'flex-start',
-                            alignItems: 'center',
-                        }}
-                        onPress={() => this.capture()}>
-                        <Entypo name="camera" size={60} />
-                    </TouchableOpacity>
-                </View>
-            </View> : this.state.clicked === 'Video' && <View style={{ flex: 1 }}>
-                <Camera
-                    style={{ flex: 0.9 }}
-                    type={this.state.type}>
-                </Camera>
-                <View
-                    style={{
-                        flex: 0.1,
-                        backgroundColor: 'transparent',
-                        flexDirection: 'row',
-                    }}>
-                    <TouchableOpacity
-                        style={{
-                            flex: 0.1,
-                            alignSelf: 'center',
-                            marginLeft: 10,
-                        }}
-                        onPress={() => {
-                            this.setState({
-                                type:
-                                    this.state.type === Camera.Constants.Type.back
-                                        ? Camera.Constants.Type.front
-                                        : Camera.Constants.Type.back,
-                            });
-                        }}>
-                        <FontAwesome name="rotate-right" size={40} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={{
-                            flex: 1,
-                            alignSelf: 'flex-start',
-                            alignItems: 'center',
-                        }}
-                        onPress={() => this.record()}>
-                        <Entypo name="controller-record" size={60} style={{ color: 'red' }} />
-                    </TouchableOpacity>
-                </View>
             </View>
         )
     }
@@ -243,7 +189,8 @@ const styles = StyleSheet.create({
         margin: 5,
     },
     mine: {
-        width: "80%",
+        minWidth: '20%',
+        maxWidth: '80%',
         height: "auto",
         padding: 10,
         backgroundColor: "#058bf2",
@@ -253,7 +200,8 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     your: {
-        width: "80%",
+        minWidth: '20%',
+        maxWidth: '80%',
         padding: 10,
         height: "auto",
         backgroundColor: "#e6e2da",

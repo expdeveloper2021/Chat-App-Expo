@@ -5,7 +5,7 @@ const config = {
     authDomain: "messenger-mobile.firebaseapp.com",
     databaseURL: "https://messenger-mobile.firebaseio.com",
     projectId: "messenger-mobile",
-    storageBucket: "",
+    storageBucket: "messenger-mobile.appspot.com",
     messagingSenderId: "388469856702",
     appId: "1:388469856702:web:9fdc6403798a1392"
 };
