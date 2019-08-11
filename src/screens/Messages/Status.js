@@ -15,17 +15,11 @@ export class Status extends Component {
 
     async componentDidMount() {
         let uid = await firebase.auth().currentUser.uid
-        firebase.database().ref("stories").on("value", (data) => {
-            if (data.val() !== null) {
-                let a = Object.entries(data.val())
-                for (let i = 0; i < a.length; i++) {
-                    if (a[i][0] !== uid) {
-                        let statuses = this.state.statuses
-                        statuses = a
-                        this.setState({ statuses })
-                    }
-                }
-            }
+        console.log(uid)
+        firebase.database().ref(`users/${uid}/info`).on("value", (data) => {
+            let dat = data.val()
+            console.log(dat)
+            // firebase.database().ref(`stories/${uid}/info`).set()
         })
     }
 
@@ -50,7 +44,7 @@ export class Status extends Component {
                     <Text style={{ fontSize: 16, color: 'white', marginLeft: 10 }}>All Status</Text>
                 </View>
                 <View style={{ flex: 1, backgroundColor: 'aqua' }}>
-                    
+
                 </View>
             </View >
         )

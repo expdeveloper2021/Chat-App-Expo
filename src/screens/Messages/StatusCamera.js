@@ -42,7 +42,7 @@ export default class StatusCamera extends Component {
         const response = await fetch(photos);
         const blob = await response.blob();
         console.log(blob, '///sada')
-        let storageRef = firebase.storage().ref().child(`userimages/${photo.name}`)
+        let storageRef = firebase.storage().ref().child(`statusImages/${photo.name}`)
         storageRef.put(blob)
             .then((snapshot) => {
                 snapshot.ref.getDownloadURL().then((snapUrl) => {

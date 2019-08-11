@@ -12,6 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import firebase from '../../Config/Fire'
 
+
 export default class Messages extends Component {
     constructor() {
         super()
@@ -20,8 +21,8 @@ export default class Messages extends Component {
             msg: '',
             msgArr: [],
             shouldPlay: false,
-            recording: false,
-            loadEmoji: false,
+            recording: '',
+            isLoad: true,
         }
     }
 
@@ -115,15 +116,55 @@ export default class Messages extends Component {
         const recording = new Audio.Recording();
         try {
             await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
-            await recording.startAsync();
-            console.log(recording)
-        } catch (error) {
-            // An error occurred!
+            await recording.startAsync()
+            this.setState({ recording, isLoad: false })
         }
+        catch (e) {
+            console.log(e)
+        }
+    }
+
+    async stop() {
+        const { recording } = this.state
+        await recording.stopAndUnloadAsync()
+        let URL = recording._uri
+        const response = await fetch(URL);
+        const blob = await response.blob();
+        let storageRef = firebase.storage().ref().child(`userAudio/${blob.name}`)
+        storageRef.put(blob)
+            .then((snapshot) => {
+                snapshot.ref.getDownloadURL().then((snapUrl) => {
+                    let today = new Date()
+                    let created = today.getHours() + ":" + today.getMinutes() + ',' + today.getDate() + '-' + (today.getMonth() + 1) + '-' + today.getFullYear();
+                    let msgObj = {
+                        snapUrl,
+                        created,
+                        sender: "me",
+                        type: 'audio',
+                    }
+                    firebase.database().ref(`chatRoom/${this.state.uid}/${this.state.opponentID}`).push(msgObj).then(() => {
+                        msgObj.sender = "opponent"
+                        firebase.database().ref(`chatRoom/${this.state.opponentID}/${this.state.uid}`).push(msgObj).then(() => {
+                            this.setState({ isLoad: true, recording: '' })
+                        })
+                    })
+                })
+            })
     }
 
     location() {
         this.props.navigation.navigate("Map")
+    }
+
+    async playAudio(file) {
+        const soundObject = new Audio.Sound();
+        try {
+            await soundObject.loadAsync({ uri: file });
+            await soundObject.playAsync();
+            console.log('platying')
+        } catch (error) {
+            console.log(error)
+        }
     }
 
     send() {
@@ -153,21 +194,24 @@ export default class Messages extends Component {
                             {!!this.state.msgArr && this.state.msgArr.map((e) => {
                                 if (e.sender === 'me') {
                                     if (e.type === 'message') {
-                                        return <View style={styles.mine} key={Math.random()}><Text>{e.msg}</Text></View>
-                                    }
-                                    if (e.type === 'image') {
-                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} key={e.snapUrl} />
-                                    }
-                                    if (e.type === 'video') {
+                                        return <View style={styles.mine}><Text>{e.msg}</Text></View>
+                                    } else if (e.type === 'image') {
+                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} />
+                                    } else if (e.type === 'video') {
                                         return <Video source={{ uri: e.snapUrl }}
-                                            key={e.snapUrl}
+                                            onPress={shouldPlay}
                                             rate={1.0}
                                             volume={1.0}
                                             isMuted={false}
                                             resizeMode="cover"
-                                            shouldPlay
                                             isLooping
                                             style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} />
+                                    } else if (e.type === 'audio') {
+                                        return <View style={styles.mines}>
+                                            <TouchableOpacity onPress={() => this.playAudio(e.snapUrl)}>
+                                                <AntDesign name="play" size={26} />
+                                            </TouchableOpacity>
+                                        </View>
                                     }
                                 } else {
                                     if (e.type === 'message') {
@@ -180,9 +224,15 @@ export default class Messages extends Component {
                                             volume={1.0}
                                             isMuted={false}
                                             resizeMode="cover"
-                                            shouldPlay
+                                            onPress={shouldPlay}
                                             isLooping
                                             style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} />
+                                    } else if (e.type === 'audio') {
+                                        return <View style={styles.yours}>
+                                            <TouchableOpacity onPress={() => this.playAudio(e.snapUrl)}>
+                                                <AntDesign name="play" size={26} />
+                                            </TouchableOpacity>
+                                        </View>
                                     }
                                 }
                             })}
@@ -190,7 +240,7 @@ export default class Messages extends Component {
                         <View style={{ display: 'flex', flexDirection: "row", justifyContent: 'space-between', padding: 10 }}>
                             <TouchableOpacity onPress={() => this.video()}><Text><FontAwesome name="video-camera" size={26} /></Text></TouchableOpacity>
                             <TouchableOpacity onPress={() => this.camera()}><Text><AntDesign name="camera" size={26} /></Text></TouchableOpacity>
-                            <TouchableOpacity onPress={() => this.audio()}><Text><FontAwesome name="microphone" size={26} /></Text></TouchableOpacity>
+                            <TouchableOpacity onPress={() => this.state.isLoad ? this.audio() : this.stop()}><Text><FontAwesome name="microphone" size={26} /></Text></TouchableOpacity>
                             <TouchableOpacity onPress={() => this.location()}><Text> <Entypo name="location-pin" size={26} /></Text></TouchableOpacity>
                             <TouchableOpacity onPress={() => this.photo()}><Text><AntDesign name="picture" size={26} /></Text></TouchableOpacity>
                         </View>
@@ -241,9 +291,29 @@ const styles = StyleSheet.create({
         alignSelf: "flex-end",
         borderRadius: 10,
     },
+    mines: {
+        width: '80%',
+        height: "auto",
+        padding: 10,
+        backgroundColor: "#91c3ff",
+        color: "black",
+        marginTop: 10,
+        alignSelf: "flex-end",
+        borderRadius: 10,
+    },
     your: {
         minWidth: '20%',
         maxWidth: '80%',
+        padding: 10,
+        height: "auto",
+        backgroundColor: "#e6e2da",
+        color: "black",
+        marginTop: 10,
+        alignSelf: "flex-start",
+        borderRadius: 10,
+    },
+    yours: {
+        width: '80%',
         padding: 10,
         height: "auto",
         backgroundColor: "#e6e2da",

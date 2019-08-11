@@ -20,7 +20,7 @@ export default class Video extends Component {
     }
 
     static navigationOptions = {
-        title: 'Camera',
+        title: 'Video',
         headerStyle: {
             backgroundColor: 'blue',
         },
@@ -45,32 +45,34 @@ export default class Video extends Component {
     }
 
     async stop() {
-        this.camera.stopRecording();
+        await this.camera.stopRecording();
         this.setState({ color: 'black', recording: false })
-        const { photo } = this.state
-        let URL = photo.uri
-        const response = await fetch(URL);
-        const blob = await response.blob();
-        let storageRef = firebase.storage().ref().child(`userimages/${photo.name}`)
-        storageRef.put(blob)
-            .then((snapshot) => {
-                snapshot.ref.getDownloadURL().then((snapUrl) => {
-                    let today = new Date()
-                    let created = today.getHours() + ":" + today.getMinutes() + ',' + today.getDate() + '-' + (today.getMonth() + 1) + '-' + today.getFullYear();
-                    let msgObj = {
-                        snapUrl,
-                        created,
-                        sender: "me",
-                        type: 'video',
-                    }
-                    firebase.database().ref(`chatRoom/${this.state.uid}/${this.state.opponentID}`).push(msgObj).then(() => {
-                        msgObj.sender = "opponent"
-                        firebase.database().ref(`chatRoom/${this.state.opponentID}/${this.state.uid}`).push(msgObj).then(() => {
-                            this.props.navigation.navigate("Messages")
+        setTimeout(async () => {
+            const { photo } = this.state
+            let URL = photo.uri
+            const response = await fetch(URL);
+            const blob = await response.blob();
+            let storageRef = firebase.storage().ref().child(`userVideos/${photo.name}`)
+            storageRef.put(blob)
+                .then((snapshot) => {
+                    snapshot.ref.getDownloadURL().then((snapUrl) => {
+                        let today = new Date()
+                        let created = today.getHours() + ":" + today.getMinutes() + ',' + today.getDate() + '-' + (today.getMonth() + 1) + '-' + today.getFullYear();
+                        let msgObj = {
+                            snapUrl,
+                            created,
+                            sender: "me",
+                            type: 'video',
+                        }
+                        firebase.database().ref(`chatRoom/${this.state.uid}/${this.state.opponentID}`).push(msgObj).then(() => {
+                            msgObj.sender = "opponent"
+                            firebase.database().ref(`chatRoom/${this.state.opponentID}/${this.state.uid}`).push(msgObj).then(() => {
+                                this.props.navigation.navigate("Messages")
+                            })
                         })
                     })
                 })
-            })
+        }, 1000);
     }
 
     render() {
