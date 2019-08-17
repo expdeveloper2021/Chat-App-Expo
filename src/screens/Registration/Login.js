@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Image, StatusBar, TextInput, View, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
+import { Image, StatusBar, TextInput, View, StyleSheet, TouchableOpacity, Text, Alert, KeyboardAvoidingView } from 'react-native';
 import firebase, { login } from '../../Config/Fire'
 import * as Facebook from 'expo-facebook';
 

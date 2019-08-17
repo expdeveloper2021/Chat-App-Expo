@@ -71,7 +71,7 @@ export default class Messages extends Component {
         })
         const response = await fetch(result.uri);
         const blob = await response.blob();
-        
+
         let storageRef = firebase.storage().ref().child(`userimages/${blob._data.name}`)
         storageRef.put(blob)
             .then((snapshot) => {
@@ -150,25 +150,29 @@ export default class Messages extends Component {
     render() {
         return (
             <View style={styles.container}>
-                <KeyboardAvoidingView behavior="padding" enabled keyboardVerticalOffset="78" enabled style={{flex: 1}}>
+                <KeyboardAvoidingView behavior="padding" enabled keyboardVerticalOffset="78" enabled style={{ flex: 1 }}>
                     <View style={styles.messages}>
-                        <ScrollView>
+                        <ScrollView ref={ref => this.scrollView = ref}
+                            onContentSizeChange={() => {
+                                this.scrollView.scrollToEnd({ animated: true });
+                            }}>
                             {!!this.state.msgArr && this.state.msgArr.map((e) => {
                                 if (e.sender === 'me') {
                                     if (e.type === 'message') {
-                                        return <View style={styles.mine}><Text>{e.msg}</Text></View>
+                                        return <View style={styles.mine} key={Math.random()}><Text>{e.msg}</Text></View>
                                     } else if (e.type === 'image') {
-                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} />
+                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} key={Math.random()} />
                                     } else if (e.type === 'video') {
                                         return <Video source={{ uri: e.snapUrl }}
+                                            key={Math.random()}
                                             rate={1.0}
                                             volume={1.0}
                                             isMuted={false}
                                             resizeMode="cover"
                                             shouldPlay
-                                            style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} />
+                                            style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} key={Math.random()} />
                                     } else if (e.type === 'audio') {
-                                        return <View style={styles.mines}>
+                                        return <View style={styles.mines} key={Math.random()}>
                                             <TouchableOpacity onPress={() => this.playAudio(e.snapUrl)}>
                                                 <AntDesign name="play" size={26} />
                                             </TouchableOpacity>
@@ -176,11 +180,12 @@ export default class Messages extends Component {
                                     }
                                 } else {
                                     if (e.type === 'message') {
-                                        return <View style={styles.your}><Text>{e.msg}</Text></View>
+                                        return <View style={styles.your} key={Math.random()}><Text>{e.msg}</Text></View>
                                     } else if (e.type === 'image') {
-                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-start', borderRadius: 10, marginTop: 20 }} />
+                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-start', borderRadius: 10, marginTop: 20 }} key={Math.random()} />
                                     } else if (e.type === 'video') {
                                         return <Video source={{ uri: e.snapUrl }}
+                                            key={Math.random()}
                                             rate={1.0}
                                             volume={1.0}
                                             isMuted={false}
@@ -188,7 +193,7 @@ export default class Messages extends Component {
                                             shouldPlay
                                             style={{ width: 300, height: 300, alignSelf: 'flex-start', borderRadius: 10, marginTop: 20 }} />
                                     } else if (e.type === 'audio') {
-                                        return <View style={styles.yours}>
+                                        return <View style={styles.yours} key={Math.random()}>
                                             <TouchableOpacity onPress={() => this.playAudio(e.snapUrl)}>
                                                 <AntDesign name="play" size={26} />
                                             </TouchableOpacity>
@@ -224,7 +229,7 @@ export default class Messages extends Component {
                         </View>
                     </View>
                 </KeyboardAvoidingView>
-            </View>
+            </View >
         )
     }
 }

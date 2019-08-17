@@ -39,7 +39,7 @@ export default class Carousel extends Component {
                 <ScrollView
                     horizontal
                     pagingEnabled
-                    showsHorizontalScrollIndicator={false}
+                    showsHorizontalScrollIndicator={true}
                 >
                     {!!this.state.all.length && this.state.all.map((image) => {
                         return <Image source={{ uri: image }} style={styles.image} key={Math.random()} />
