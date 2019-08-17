@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { View, TouchableOpacity , ActivityIndicator } from 'react-native'
 import { Camera } from 'expo-camera';
 import * as Permissions from 'expo-permissions';
 import {
@@ -8,7 +8,6 @@ import {
 } from '@expo/vector-icons';
 import firebase from '../../Config/Fire'
 
-
 export default class Video extends Component {
     constructor() {
         super()
@@ -16,6 +15,7 @@ export default class Video extends Component {
             type: Camera.Constants.Type.back,
             color: 'black',
             recording: false,
+            loader: false,
         }
     }
 
@@ -46,13 +46,14 @@ export default class Video extends Component {
 
     async stop() {
         await this.camera.stopRecording();
-        this.setState({ color: 'black', recording: false })
+        this.setState({ color: 'black', recording: false, loader: true })
+
         setTimeout(async () => {
             const { photo } = this.state
             let URL = photo.uri
             const response = await fetch(URL);
             const blob = await response.blob();
-            let storageRef = firebase.storage().ref().child(`userVideos/${photo.name}`)
+            let storageRef = firebase.storage().ref().child(`userVideos/${blob._data.name}`)
             storageRef.put(blob)
                 .then((snapshot) => {
                     snapshot.ref.getDownloadURL().then((snapUrl) => {
@@ -78,45 +79,47 @@ export default class Video extends Component {
     render() {
         return (
             <View style={{ flex: 1 }}>
-                <Camera
-                    ref={ref => {
-                        this.camera = ref;
-                    }}
-                    style={{ flex: 0.9 }}
-                    type={this.state.type}>
-                </Camera>
-                <View
-                    style={{
-                        flex: 0.1,
-                        backgroundColor: 'transparent',
-                        flexDirection: 'row',
-                    }}>
-                    <TouchableOpacity
+                {this.state.loader ? <ActivityIndicator size="large" color="#0000ff" style={{ marginTop: 30 }} /> : <>
+                    <Camera
+                        ref={ref => {
+                            this.camera = ref;
+                        }}
+                        style={{ flex: 0.9 }}
+                        type={this.state.type}>
+                    </Camera>
+                    <View
                         style={{
                             flex: 0.1,
-                            alignSelf: 'center',
-                            marginLeft: 10,
-                        }}
-                        onPress={() => {
-                            this.setState({
-                                type:
-                                    this.state.type === Camera.Constants.Type.back
-                                        ? Camera.Constants.Type.front
-                                        : Camera.Constants.Type.back,
-                            });
+                            backgroundColor: 'transparent',
+                            flexDirection: 'row',
                         }}>
-                        <FontAwesome name="rotate-right" size={40} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={{
-                            flex: 1,
-                            alignSelf: 'flex-start',
-                            alignItems: 'center',
-                        }}
-                        onPress={() => this.state.recording ? this.stop() : this.capture()}>
-                        <Entypo name="controller-record" size={60} style={{ color: this.state.color }} />
-                    </TouchableOpacity>
-                </View>
+                        <TouchableOpacity
+                            style={{
+                                flex: 0.1,
+                                alignSelf: 'center',
+                                marginLeft: 10,
+                            }}
+                            onPress={() => {
+                                this.setState({
+                                    type:
+                                        this.state.type === Camera.Constants.Type.back
+                                            ? Camera.Constants.Type.front
+                                            : Camera.Constants.Type.back,
+                                });
+                            }}>
+                            <FontAwesome name="rotate-right" size={40} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={{
+                                flex: 1,
+                                alignSelf: 'flex-start',
+                                alignItems: 'center',
+                            }}
+                            onPress={() => this.state.recording ? this.stop() : this.capture()}>
+                            <Entypo name="controller-record" size={60} style={{ color: this.state.color }} />
+                        </TouchableOpacity>
+                    </View>
+                </>}
             </View>
         )
     }

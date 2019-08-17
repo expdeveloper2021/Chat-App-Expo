@@ -4,6 +4,13 @@
     "slug": "ChatApp",
     "privacy": "public",
     "sdkVersion": "33.0.0",
+    "ios": {
+      "bundleIdentifier": "com.chat.chatApp",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.chat.chatApp"
+    },
     "platforms": [
       "ios",
       "android",
@@ -11,9 +18,9 @@
     ],
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./src/Images/icon.png",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./src/Images/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -23,8 +30,6 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "ios": {
-      "supportsTablet": true
-    }
+    "description": ""
   }
 }

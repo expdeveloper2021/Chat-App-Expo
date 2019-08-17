@@ -50,11 +50,17 @@ const HomeNavigator = createStackNavigator({
     Video: {
         screen: Routes.Video
     },
+    Audios: {
+        screen: Routes.Audios
+    },
     Map: {
         screen: Routes.Map
     },
     StatusCamera: {
         screen: Routes.StatusCamera
+    },
+    Carousel: {
+        screen: Routes.Carousel
     }
 });
 

@@ -7,6 +7,9 @@ import Video from "./screens/Messages/Video";
 import Status from "./screens/Messages/Status";
 import StatusCamera from "./screens/Messages/StatusCamera";
 import Map from "./screens/Messages/Map";
+import Carousel from "./screens/Messages/Carousel";
+import Audios from "./screens/Messages/Audios";
+
 
 export {
     Login,
@@ -18,4 +21,6 @@ export {
     Status,
     StatusCamera,
     Map,
+    Carousel,
+    Audios,
 }

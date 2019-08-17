@@ -4,7 +4,6 @@ import {
     AntDesign,
     FontAwesome, Entypo
 } from '@expo/vector-icons';
-import * as Permissions from 'expo-permissions';
 import { TextInput } from 'react-native-paper';
 import { Camera } from 'expo-camera';
 import { Video } from 'expo-av';
@@ -22,7 +21,6 @@ export default class Messages extends Component {
             msgArr: [],
             shouldPlay: false,
             recording: '',
-            isLoad: true,
         }
     }
 
@@ -73,7 +71,8 @@ export default class Messages extends Component {
         })
         const response = await fetch(result.uri);
         const blob = await response.blob();
-        let storageRef = firebase.storage().ref().child(`userimages/${blob.name}`)
+        
+        let storageRef = firebase.storage().ref().child(`userimages/${blob._data.name}`)
         storageRef.put(blob)
             .then((snapshot) => {
                 snapshot.ref.getDownloadURL().then((snapUrl) => {
@@ -111,45 +110,8 @@ export default class Messages extends Component {
             })
     }
 
-    async audio() {
-        Permissions.askAsync(Permissions.AUDIO_RECORDING);
-        const recording = new Audio.Recording();
-        try {
-            await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
-            await recording.startAsync()
-            this.setState({ recording, isLoad: false })
-        }
-        catch (e) {
-            console.log(e)
-        }
-    }
-
-    async stop() {
-        const { recording } = this.state
-        await recording.stopAndUnloadAsync()
-        let URL = recording._uri
-        const response = await fetch(URL);
-        const blob = await response.blob();
-        let storageRef = firebase.storage().ref().child(`userAudio/${blob.name}`)
-        storageRef.put(blob)
-            .then((snapshot) => {
-                snapshot.ref.getDownloadURL().then((snapUrl) => {
-                    let today = new Date()
-                    let created = today.getHours() + ":" + today.getMinutes() + ',' + today.getDate() + '-' + (today.getMonth() + 1) + '-' + today.getFullYear();
-                    let msgObj = {
-                        snapUrl,
-                        created,
-                        sender: "me",
-                        type: 'audio',
-                    }
-                    firebase.database().ref(`chatRoom/${this.state.uid}/${this.state.opponentID}`).push(msgObj).then(() => {
-                        msgObj.sender = "opponent"
-                        firebase.database().ref(`chatRoom/${this.state.opponentID}/${this.state.uid}`).push(msgObj).then(() => {
-                            this.setState({ isLoad: true, recording: '' })
-                        })
-                    })
-                })
-            })
+    audio() {
+        this.props.navigation.navigate('Audios')
     }
 
     location() {
@@ -188,7 +150,7 @@ export default class Messages extends Component {
     render() {
         return (
             <View style={styles.container}>
-                <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} enabled>
+                <KeyboardAvoidingView behavior="padding" enabled keyboardVerticalOffset="78" enabled style={{flex: 1}}>
                     <View style={styles.messages}>
                         <ScrollView>
                             {!!this.state.msgArr && this.state.msgArr.map((e) => {
@@ -199,12 +161,11 @@ export default class Messages extends Component {
                                         return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} />
                                     } else if (e.type === 'video') {
                                         return <Video source={{ uri: e.snapUrl }}
-                                            onPress={shouldPlay}
                                             rate={1.0}
                                             volume={1.0}
                                             isMuted={false}
                                             resizeMode="cover"
-                                            isLooping
+                                            shouldPlay
                                             style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} />
                                     } else if (e.type === 'audio') {
                                         return <View style={styles.mines}>
@@ -217,16 +178,15 @@ export default class Messages extends Component {
                                     if (e.type === 'message') {
                                         return <View style={styles.your}><Text>{e.msg}</Text></View>
                                     } else if (e.type === 'image') {
-                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} />
+                                        return <Image source={{ uri: e.snapUrl }} style={{ width: 300, height: 300, alignSelf: 'flex-start', borderRadius: 10, marginTop: 20 }} />
                                     } else if (e.type === 'video') {
                                         return <Video source={{ uri: e.snapUrl }}
                                             rate={1.0}
                                             volume={1.0}
                                             isMuted={false}
                                             resizeMode="cover"
-                                            onPress={shouldPlay}
-                                            isLooping
-                                            style={{ width: 300, height: 300, alignSelf: 'flex-end', borderRadius: 10, marginTop: 20 }} />
+                                            shouldPlay
+                                            style={{ width: 300, height: 300, alignSelf: 'flex-start', borderRadius: 10, marginTop: 20 }} />
                                     } else if (e.type === 'audio') {
                                         return <View style={styles.yours}>
                                             <TouchableOpacity onPress={() => this.playAudio(e.snapUrl)}>
@@ -240,7 +200,7 @@ export default class Messages extends Component {
                         <View style={{ display: 'flex', flexDirection: "row", justifyContent: 'space-between', padding: 10 }}>
                             <TouchableOpacity onPress={() => this.video()}><Text><FontAwesome name="video-camera" size={26} /></Text></TouchableOpacity>
                             <TouchableOpacity onPress={() => this.camera()}><Text><AntDesign name="camera" size={26} /></Text></TouchableOpacity>
-                            <TouchableOpacity onPress={() => this.state.isLoad ? this.audio() : this.stop()}><Text><FontAwesome name="microphone" size={26} /></Text></TouchableOpacity>
+                            <TouchableOpacity onPress={() => this.audio()}><Text><FontAwesome name="microphone" size={26} /></Text></TouchableOpacity>
                             <TouchableOpacity onPress={() => this.location()}><Text> <Entypo name="location-pin" size={26} /></Text></TouchableOpacity>
                             <TouchableOpacity onPress={() => this.photo()}><Text><AntDesign name="picture" size={26} /></Text></TouchableOpacity>
                         </View>

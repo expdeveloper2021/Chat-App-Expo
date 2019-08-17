@@ -5,7 +5,6 @@ import { List } from 'react-native-paper';
 import firebase from '../../Config/Fire'
 
 export class Status extends Component {
-
     constructor() {
         super()
         this.state = {
@@ -15,16 +14,35 @@ export class Status extends Component {
 
     async componentDidMount() {
         let uid = await firebase.auth().currentUser.uid
-        console.log(uid)
         firebase.database().ref(`users/${uid}/info`).on("value", (data) => {
             let dat = data.val()
-            console.log(dat)
-            // firebase.database().ref(`stories/${uid}/info`).set()
+            let name = dat.name
+            let uids = dat.uid
+            let userObj = {
+                name,
+                uids
+            }
+            firebase.database().ref(`stories/${uid}/info`).set(userObj)
+        })
+        firebase.database().ref("stories").on("child_added", (data) => {
+            let a = Object.entries(data.val())
+            if (a.length > 1) {
+                if (a[1][1].uids !== uid) {
+                    let statuses = this.state.statuses
+                    statuses.push(a)
+                    this.setState({ statuses, uid })
+                }
+            }
         })
     }
 
     open() {
         this.props.navigation.navigate("StatusCamera")
+    }
+
+    carous(i) {
+        firebase.database().ref(`users/${this.state.uid}/status`).set(i)
+        this.props.navigation.navigate("Carousel")
     }
 
     render() {
@@ -44,7 +62,14 @@ export class Status extends Component {
                     <Text style={{ fontSize: 16, color: 'white', marginLeft: 10 }}>All Status</Text>
                 </View>
                 <View style={{ flex: 1, backgroundColor: 'aqua' }}>
-
+                    {!!this.state.statuses.length && this.state.statuses.map((e) => {
+                        return <TouchableOpacity style={{ backgroundColor: '#4484eb', marginTop: 10 }} onPress={this.carous.bind(this, e[1][1].uids)} key={Math.random()}>
+                            <List.Item
+                                title={e[1][1].name}
+                                left={props => <Image {...props} source={folder} style={{ width: 50, height: 50, alignSelf: "center" }} />}
+                            />
+                        </TouchableOpacity>
+                    })}
                 </View>
             </View >
         )
